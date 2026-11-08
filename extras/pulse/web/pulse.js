@@ -215,6 +215,15 @@
   }
 
   var typed = {};   // id -> {full, shown}
+  function renderListItems(items) {
+    return items.map(function (it) {
+      if (it.empty) {
+        return '<li style="visibility:hidden"><span class="dot"></span><div style="min-width:0"><div class="t">&nbsp;</div></div></li>';
+      }
+      return '<li><span class="dot ' + (it.level ? "lv-" + it.level : "") + '"></span><div style="min-width:0"><div class="t">' + esc(it.title) + "</div>" +
+        (it.text ? '<div class="s">' + esc(it.text) + "</div>" : "") + '</div><span class="r">' + esc(it.right || ago(it.t) || (it.value != null ? it.value + (it.unit || "") : "")) + "</span></li>";
+    }).join("");
+  }
   function generic(w) {
     var el = panel(w.id, w.title || w.id, w.icon);
     var d = w.data || {}, b = bodyOf(el), t = w.type, html = "";
@@ -227,10 +236,40 @@
       html = '<div class="row"><span class="big" style="font-size:2.2rem">' + num(d.value) + "<small>" + esc(unit) + '</small></span></div><div class="seg" style="height:.8rem"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
         (d.note ? '<div class="note">' + esc(d.note) + "</div>" : "");
     } else if (t === "list") {
-      html = '<ul class="items">' + (d.items || []).slice(0, w.slot === "center" ? 4 : 6).map(function (it) {
-        return '<li><span class="dot ' + (it.level ? "lv-" + it.level : "") + '"></span><div style="min-width:0"><div class="t">' + esc(it.title) + "</div>" +
-          (it.text ? '<div class="s">' + esc(it.text) + "</div>" : "") + '</div><span class="r">' + esc(it.right || ago(it.t) || (it.value != null ? it.value + (it.unit || "") : "")) + "</span></li>";
-      }).join("") + "</ul>" + (d.note ? '<div class="note">' + esc(d.note) + "</div>" : "");
+      var pageSize = w.slot === "center" ? 4 : 6;
+      var allItems = (d.items || []).slice();
+      if (allItems.length > pageSize) {
+        var itemsJson = JSON.stringify(allItems);
+        if (!b._scrollWrap) {
+          b._scrollWrap = true;
+          b._itemsJson = itemsJson;
+          var p0 = allItems.slice(0, pageSize);
+          b.innerHTML = '<div class="list-scroll-wrap" style="position:relative; overflow:hidden;">' +
+            '<ul class="items list-page current">' + renderListItems(p0) + '</ul>' +
+            '</div>' + (d.note ? '<div class="note">' + esc(d.note) + '</div>' : '');
+          var wrap = b.querySelector(".list-scroll-wrap");
+          if (wrap) wrap._page = 0;
+        } else if (b._itemsJson !== itemsJson) {
+          b._itemsJson = itemsJson;
+          var wrap = b.querySelector(".list-scroll-wrap");
+          if (wrap && !wrap._animating) {
+            var curPage = wrap._page || 0;
+            var totalPages = Math.ceil(allItems.length / pageSize);
+            if (curPage >= totalPages) curPage = 0;
+            wrap._page = curPage;
+            var curUl = wrap.querySelector(".list-page.current");
+            if (curUl) {
+              var pItems = allItems.slice(curPage * pageSize, (curPage + 1) * pageSize);
+              while (pItems.length < pageSize) pItems.push({ empty: true });
+              curUl.innerHTML = renderListItems(pItems);
+            }
+          }
+        }
+        return finish(el, w);
+      } else {
+        b._scrollWrap = false;
+        html = '<ul class="items">' + renderListItems(allItems) + '</ul>' + (d.note ? '<div class="note">' + esc(d.note) + '</div>' : '');
+      }
     } else if (t === "status") {
       // long names (problems, alerts) get one tile per line instead of being cut in two columns
       var wide = (d.items || []).some(function (it) { return String(it.title || "").length > 15; });
@@ -301,6 +340,67 @@
       if (box._h !== html) { box.innerHTML = html; box._h = html; }
     });
   }, 40);
+
+  // scrolling animation for list panels (every 6s)
+  setInterval(function () {
+    if (covered) return;
+    Object.keys(panels).forEach(function (id) {
+      var el = panels[id];
+      if (!el) return;
+      var wrap = el.querySelector(".list-scroll-wrap");
+      if (!wrap || wrap._animating) return;
+      var w = (S && S.widgets ? S.widgets : []).filter(function (x) { return x.id === id; })[0];
+      if (!w || !w.data || !w.data.items) return;
+      var all = w.data.items;
+      var pageSize = w.slot === "center" ? 4 : 6;
+      if (all.length <= pageSize) return;
+      var totalPages = Math.ceil(all.length / pageSize);
+      var curPage = wrap._page || 0;
+      var nextPage = (curPage + 1) % totalPages;
+
+      var curUl = wrap.querySelector(".list-page.current");
+      if (!curUl) return;
+
+      var nextItems = all.slice(nextPage * pageSize, (nextPage + 1) * pageSize);
+      while (nextItems.length < pageSize) nextItems.push({ empty: true });
+
+      wrap._animating = true;
+      var nextUl = document.createElement("ul");
+      nextUl.className = "items list-page next";
+      nextUl.innerHTML = renderListItems(nextItems);
+      nextUl.style.position = "absolute";
+      nextUl.style.left = "0";
+      nextUl.style.right = "0";
+      nextUl.style.top = "100%";
+      nextUl.style.opacity = "0";
+      wrap.appendChild(nextUl);
+
+      // Force layout calculation
+      void nextUl.offsetHeight;
+
+      curUl.style.transition = "transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.65s ease";
+      curUl.style.transform = "translateY(-100%)";
+      curUl.style.opacity = "0";
+
+      nextUl.style.transition = "transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.65s ease";
+      nextUl.style.transform = "translateY(-100%)";
+      nextUl.style.opacity = "1";
+
+      setTimeout(function () {
+        if (curUl.parentNode === wrap) wrap.removeChild(curUl);
+        nextUl.className = "items list-page current";
+        nextUl.style.position = "relative";
+        nextUl.style.left = "";
+        nextUl.style.right = "";
+        nextUl.style.top = "";
+        nextUl.style.transform = "";
+        nextUl.style.transition = "";
+        nextUl.style.opacity = "";
+        wrap._page = nextPage;
+        wrap._animating = false;
+      }, 670);
+    });
+  }, 6000);
 
   function place(col, list) {
     var want = list.filter(Boolean);
@@ -1401,6 +1501,7 @@
     }
 
     function draw(now) {
+      if (kind === "image") { g.clearRect(0, 0, W, H); return; }
       var t = (now - t0) / 1000;
       var hz = H * 0.745, cx = W / 2;
       var bg = COL.bg, ac = COL.accent, a2 = COL.accent2;
@@ -1708,6 +1809,7 @@
         paused = full;
         document.body.classList.toggle("busy", busy);
         document.body.classList.toggle("calm", kind === "calm");
+        document.body.classList.toggle("image", kind === "image");
       },
       alert: function (level) { alertEnv = 1; alertCol = level === "crit" ? COL.crit : COL.warn; spikes.push({ born: performance.now(), amp: 1.6, col: alertCol }); }
     };

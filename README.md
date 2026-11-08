@@ -64,7 +64,7 @@ monitors, `dmabuf = "on"` (guide section 12).
 ## Install
 
 ```
-omarchy-theme-install https://github.com/piermark/omarchy-pulse-theme
+omarchy-theme-install https://github.com/shawokou123/omarchy-pulse-theme
 ~/.config/omarchy/themes/pulse/extras/install-live
 ```
 

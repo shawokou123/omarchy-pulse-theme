@@ -74,7 +74,7 @@ def main(args: list) -> int:
     now = time.time()
     items = [{"title": p["title"][:110], "text": p["src"], "t": p["t"],
               **({"level": "info"} if p["t"] and now - p["t"] < 86400 else {})}
-             for p in posts[:int(os.environ.get("PULSE_FEED_MAX", "6"))]]
+             for p in posts[:int(os.environ.get("PULSE_FEED_MAX", "30"))]]
     out = {"type": "list", "items": items}
     if errors:
         out["note"] = "offline: " + "; ".join(errors)[:180]

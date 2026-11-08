@@ -38,6 +38,8 @@ python3 -c "import gi; gi.require_version('GtkLayerShell','0.1')" 2>/dev/null ||
 python3 -c "import gi; gi.require_version('WebKit2','4.1')" 2>/dev/null || need+=(webkit2gtk-4.1)
 command -v ffmpeg >/dev/null || need+=(ffmpeg)
 command -v playerctl >/dev/null || need+=(playerctl)
+command -v cava >/dev/null || need+=(cava)
+command -v fping >/dev/null || need+=(fping)
 if ((${#need[@]})); then
   echo "Installing: ${need[*]}"
   sudo pacman -S --needed --noconfirm "${need[@]}"

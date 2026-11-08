@@ -4,10 +4,12 @@
 # (c) 2026 Marco Porro (x.com/MarcoPorro), MIT.
 
 [pulse]
-city = ""                        # weather: "Milan", "Berlin"... (or latitude = 45.46 / longitude = 9.19)
+city = "Taizhou, Jiangsu"           # weather: "Milan", "Berlin"... (or latitude = 45.46 / longitude = 9.19)
+latitude = 32.4907
+longitude = 119.9081
 units = "metric"                 # or "imperial"
 clock = "24h"                    # or "12h"
-scene = "sphere"                 # sphere (the LED sphere) | skyline | orbit | calm
+scene = "image"                  # image (background image) | sphere | skyline | orbit | calm
 skyline = "auto"                 # the real city behind the towers: "auto" (the weather's city), "off", or one of
                                  # 90+ cities: rome, milan, alessandria, new-york, tokyo, paris... (docs/GUIDE.md 22)
 sphere = "real"                  # the sphere's look: "real" (one continuous image) | "led" (thousands of separate lights)
@@ -27,7 +29,7 @@ sun = true                       # the sky follows the real sun (dawn, day, dusk
 # port = 47800
 
 [colors]
-preset = "theme"                 # theme (the Omarchy theme in use) | synthwave | matrix | amber | ice | vapor | inferno
+preset = "matrix"                # theme (the Omarchy theme in use) | synthwave | matrix | amber | ice | vapor | inferno
 # accent = "#39e1ff"             # or set any single colour: bg, fg, accent, accent2, ok, warn, crit, dim
 
 [music]
@@ -115,21 +117,12 @@ slot = "right"
 
 [[source]]
 name = "news"
-title = "omarchy · news"
+title = "纽约时报 · 中文"
 icon = "󰎕"
-command = "pulse-feed 'Omarchy=https://github.com/basecamp/omarchy/releases.atom' 'DHH=https://world.hey.com/dhh/feed.atom'"
-every = 1800
+command = "pulse-feed '纽时=https://cn.nytimes.com/rss/'"
+every = 300
 slot = "right"
-# click = "xdg-open https://world.hey.com/dhh"   # any panel can run a command when you click it
-
-[[source]]
-name = "ping"
-title = "network"
-icon = "󰛳"
-command = "pulse-ping gateway 1.1.1.1 github.com"   # 'gateway' = your router
-every = 20
-type = "status"
-slot = "right"
+click = "xdg-open https://cn.nytimes.com/"
 
 # ---------------------------------------------------------------- AI agents as drones over the city
 # Claude Code: add the hooks in docs/GUIDE.md section 16 (omarchy-pulse hook claude); Codex CLI:
