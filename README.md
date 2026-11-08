@@ -2,6 +2,18 @@
 
 ![Omarchy Pulse](preview.png)
 
+### 🚀 后来者（或新机器）一键安装命令
+
+任何人（或你在其他机器上）只需要在本地终端运行以下两行命令，就能直接得到和你当前完全一致的效果：
+
+```bash
+# 1. 一键下载并应用主题
+omarchy-theme-install https://github.com/shawokou123/omarchy-pulse-theme
+
+# 2. 一键激活动态壁纸与配置
+~/.config/omarchy/themes/pulse/extras/install-live
+```
+
 Your desktop, alive. Pulse turns the Omarchy wallpaper into a live scene made of your own data:
 
 - **new in 1.2: your real city** (90+, every continent), **your repositories as towers**, **the ISS and every SpaceX
